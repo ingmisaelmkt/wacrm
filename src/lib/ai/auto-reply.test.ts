@@ -64,6 +64,7 @@ const ARGS = {
   conversationId: 'conv-1',
   contactId: 'contact-1',
   configOwnerUserId: 'user-1',
+  phoneNumber: '+15550000000',
 }
 
 function aiConfig(overrides: Partial<AiConfig> = {}): AiConfig {
@@ -77,6 +78,7 @@ function aiConfig(overrides: Partial<AiConfig> = {}): AiConfig {
     autoReplyMaxPerConversation: 3,
     handoffAgentId: null,
     embeddingsApiKey: null,
+    customEndpointUrl: null,
     ...overrides,
   }
 }

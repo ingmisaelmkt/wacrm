@@ -15,7 +15,7 @@
     "createAccount": "계정 만들기"
   },
   "Sidebar": {
-    "title": "WhatsApp용 CRM 템플릿",
+    "title": "TruckCenter",
     "dashboard": "대시보드",
     "inbox": "인박스",
     "notifications": "알림",
@@ -1637,7 +1637,11 @@
       "encryptionNotice": "키는 저장 시 암호화되며(AES-256-GCM), 저장 후에는 다시 표시되지 않습니다.",
       "provider": "공급자",
       "model": "모델",
+      "endpointUrl": "엔드포인트 URL",
+      "endpointUrlPlaceholder": "https://your-agent.example.com",
+      "customProviderNotice": "회원님의 에이전트가 자체 프롬프트, 도구, 지식베이스를 관리합니다 — wacrm은 고객의 전화번호와 최신 메시지만 전달하고, 에이전트의 응답을 그대로 WhatsApp으로 전송합니다.",
       "apiKey": "API 키",
+      "sharedSecret": "공유 비밀키",
       "testKey": "키 테스트",
       "testSuccess": "키가 정상 작동합니다 — 공급자가 응답했습니다.",
       "testRejected": "공급자가 요청을 거부했습니다.",
@@ -1662,6 +1666,7 @@
       "remove": "제거",
       "save": "저장",
       "missingModel": "모델 이름을 입력하세요.",
+      "missingEndpointUrl": "에이전트의 엔드포인트 URL을 입력하세요.",
       "missingApiKey": "API 키를 입력하세요.",
       "saveSuccess": "AI 어시스턴트가 저장되었습니다.",
       "saveFailed": "저장하지 못했습니다.",

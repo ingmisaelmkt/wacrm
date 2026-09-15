@@ -4,6 +4,7 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
 import { AiError, type AiProvider } from '@/lib/ai/types'
+import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 /**
  * POST /api/ai/test  (admin+)
@@ -27,15 +28,55 @@ export async function POST(request: Request) {
     }
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic') {
+    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'custom') {
       return NextResponse.json(
-        { error: 'provider must be "openai" or "anthropic"' },
+        { error: 'provider must be "openai", "anthropic", or "custom"' },
         { status: 400 },
       )
     }
-    const model = typeof body.model === 'string' ? body.model.trim() : ''
+    const model =
+      provider === 'custom'
+        ? 'custom-agent'
+        : typeof body.model === 'string'
+          ? body.model.trim()
+          : ''
     if (!model) {
       return NextResponse.json({ error: 'model is required' }, { status: 400 })
+    }
+
+    let customEndpointUrl: string | null = null
+    if (provider === 'custom') {
+      const raw =
+        typeof body.custom_endpoint_url === 'string'
+          ? body.custom_endpoint_url.trim()
+          : ''
+      let parsed: URL | null = null
+      if (raw) {
+        try {
+          parsed = new URL(raw)
+        } catch {
+          return NextResponse.json(
+            { error: 'custom_endpoint_url must be a valid URL' },
+            { status: 400 },
+          )
+        }
+      }
+      if (!raw || parsed?.protocol !== 'https:') {
+        return NextResponse.json(
+          { error: 'custom_endpoint_url must be https://' },
+          { status: 400 },
+        )
+      }
+      if (!(await isDeliverableUrl(raw))) {
+        return NextResponse.json(
+          {
+            error:
+              'custom_endpoint_url must resolve to a public address (no localhost / private IPs)',
+          },
+          { status: 400 },
+        )
+      }
+      customEndpointUrl = raw
     }
 
     const rawKey = typeof body.api_key === 'string' ? body.api_key.trim() : ''
@@ -73,6 +114,7 @@ export async function POST(request: Request) {
         autoReplyMaxPerConversation: 3,
         handoffAgentId: null,
         embeddingsApiKey: null,
+        customEndpointUrl,
       })
     } catch (err) {
       if (err instanceof AiError) {

@@ -44,10 +44,12 @@ export async function POST(request: Request) {
     }
 
     // RLS scopes the SSR client to the caller's account, so a missing
-    // row means "not yours / not found" either way.
+    // row means "not yours / not found" either way. The contact join
+    // resolves the phone number the `custom` provider needs — harmless
+    // extra column for openai/anthropic.
     const { data: conversation, error: convErr } = await supabase
       .from('conversations')
-      .select('id')
+      .select('id, contacts(phone)')
       .eq('id', conversationId)
       .maybeSingle()
     if (convErr) {
@@ -104,7 +106,13 @@ export async function POST(request: Request) {
       knowledge,
     })
 
-    const { text, usage } = await generateReply({ config, systemPrompt, messages })
+    const contact = conversation.contacts as unknown as { phone: string } | null
+    const { text, usage } = await generateReply({
+      config,
+      systemPrompt,
+      messages,
+      phoneNumber: contact?.phone,
+    })
 
     // Record spend on the account's BYO key. Best-effort + via the
     // service role (the log has no `authenticated` INSERT policy). This

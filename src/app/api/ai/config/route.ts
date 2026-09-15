@@ -9,6 +9,7 @@ import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
 import { embedTexts } from '@/lib/ai/embeddings'
 import { AiError, type AiProvider } from '@/lib/ai/types'
+import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 function bad(message: string) {
   return NextResponse.json({ error: message }, { status: 400 })
@@ -30,7 +31,7 @@ export async function GET() {
       // `api_key` is selected only to derive `has_key` — it is stripped
       // out below and never returned to the client.
       .select(
-        'provider, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key',
+        'provider, model, system_prompt, is_active, auto_reply_enabled, auto_reply_max_per_conversation, handoff_agent_id, api_key, embeddings_api_key, custom_endpoint_url',
       )
       .eq('account_id', accountId)
       .maybeSingle()
@@ -78,11 +79,44 @@ export async function POST(request: Request) {
     if (!body || typeof body !== 'object') return bad('Invalid request body')
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic') {
-      return bad('provider must be "openai" or "anthropic"')
+    if (provider !== 'openai' && provider !== 'anthropic' && provider !== 'custom') {
+      return bad('provider must be "openai", "anthropic", or "custom"')
     }
-    const model = typeof body.model === 'string' ? body.model.trim() : ''
+
+    // The `custom` provider calls the account's own agent, which picks
+    // its own model — the field doesn't apply, so it's fixed server-side
+    // rather than trusting whatever the client sent.
+    const model =
+      provider === 'custom'
+        ? 'custom-agent'
+        : typeof body.model === 'string'
+          ? body.model.trim()
+          : ''
     if (!model) return bad('model is required')
+
+    let customEndpointUrl: string | null = null
+    if (provider === 'custom') {
+      const raw =
+        typeof body.custom_endpoint_url === 'string'
+          ? body.custom_endpoint_url.trim()
+          : ''
+      if (!raw) return bad('custom_endpoint_url is required for the custom provider')
+      let parsed: URL
+      try {
+        parsed = new URL(raw)
+      } catch {
+        return bad('custom_endpoint_url must be a valid URL')
+      }
+      if (parsed.protocol !== 'https:') {
+        return bad('custom_endpoint_url must be https://')
+      }
+      if (!(await isDeliverableUrl(raw))) {
+        return bad(
+          'custom_endpoint_url must resolve to a public address (no localhost / private IPs)',
+        )
+      }
+      customEndpointUrl = raw
+    }
 
     const systemPrompt =
       typeof body.system_prompt === 'string' && body.system_prompt.trim()
@@ -128,7 +162,7 @@ export async function POST(request: Request) {
     // Reuse the stored key when the form didn't send a fresh one.
     const { data: existing } = await supabase
       .from('ai_configs')
-      .select('id, provider, model, api_key')
+      .select('id, provider, model, api_key, custom_endpoint_url')
       .eq('account_id', accountId)
       .maybeSingle()
 
@@ -153,7 +187,8 @@ export async function POST(request: Request) {
       !existing ||
       rawKey !== '' ||
       provider !== existing.provider ||
-      model !== existing.model
+      model !== existing.model ||
+      (provider === 'custom' && customEndpointUrl !== existing.custom_endpoint_url)
 
     if (credentialsChanged) {
       try {
@@ -167,6 +202,7 @@ export async function POST(request: Request) {
           autoReplyMaxPerConversation: maxPer,
           handoffAgentId: null,
           embeddingsApiKey: null,
+          customEndpointUrl,
         })
       } catch (err) {
         if (err instanceof AiError) {
@@ -205,6 +241,9 @@ export async function POST(request: Request) {
       is_active: isActive,
       auto_reply_enabled: autoReplyEnabled,
       auto_reply_max_per_conversation: maxPer,
+      // Null out on a switch away from `custom` so a stale URL doesn't
+      // linger if the account later comes back to `custom` accidentally.
+      custom_endpoint_url: customEndpointUrl,
     }
     // Only touch the handoff target when the form actually sent the field,
     // so a partial save (e.g. flipping a toggle) doesn't wipe it.

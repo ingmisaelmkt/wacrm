@@ -815,6 +815,7 @@ async function processMessage(
       conversationId: conversation.id,
       contactId: contactRecord.id,
       configOwnerUserId,
+      phoneNumber: senderPhone,
     })
   }
 

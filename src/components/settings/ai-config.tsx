@@ -41,11 +41,13 @@ const HANDOFF_QUEUE = '__queue__';
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic (Claude)',
+  custom: 'Custom agent',
 };
 
 const KEY_PLACEHOLDER: Record<AiProvider, string> = {
   openai: 'sk-...',
   anthropic: 'sk-ant-...',
+  custom: 'Bearer secret (optional but recommended)',
 };
 
 export function AiConfig() {
@@ -65,6 +67,7 @@ export function AiConfig() {
   const [keyEdited, setKeyEdited] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [hasStoredKey, setHasStoredKey] = useState(false);
+  const [customEndpointUrl, setCustomEndpointUrl] = useState('');
   const [embeddingsKey, setEmbeddingsKey] = useState('');
   const [embeddingsKeyEdited, setEmbeddingsKeyEdited] = useState(false);
   const [hasStoredEmbeddingsKey, setHasStoredEmbeddingsKey] = useState(false);
@@ -95,6 +98,7 @@ export function AiConfig() {
         setConfigured(true);
         setProvider(data.provider);
         setModel(data.model);
+        setCustomEndpointUrl(data.custom_endpoint_url ?? '');
         setSystemPrompt(data.system_prompt ?? '');
         setIsActive(data.is_active);
         setAutoReplyEnabled(data.auto_reply_enabled);
@@ -144,6 +148,7 @@ export function AiConfig() {
   const buildBody = () => ({
     provider,
     model: model.trim(),
+    custom_endpoint_url: provider === 'custom' ? customEndpointUrl.trim() : undefined,
     api_key: keyPayload(),
     embeddings_api_key: embeddingsKeyPayload(),
     system_prompt: systemPrompt.trim() || null,
@@ -162,6 +167,7 @@ export function AiConfig() {
         body: JSON.stringify({
           provider,
           model: model.trim(),
+          custom_endpoint_url: provider === 'custom' ? customEndpointUrl.trim() : undefined,
           api_key: keyPayload(),
         }),
       });
@@ -176,7 +182,11 @@ export function AiConfig() {
   };
 
   const handleSave = async () => {
-    if (!model.trim()) {
+    if (provider === 'custom' && !customEndpointUrl.trim()) {
+      toast.error(t('missingEndpointUrl'));
+      return;
+    }
+    if (provider !== 'custom' && !model.trim()) {
       toast.error(t('missingModel'));
       return;
     }
@@ -281,24 +291,46 @@ export function AiConfig() {
                     <SelectItem value="anthropic">
                       {PROVIDER_LABEL.anthropic}
                     </SelectItem>
+                    <SelectItem value="custom">{PROVIDER_LABEL.custom}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="ai-model">{t('model')}</Label>
-                <Input
-                  id="ai-model"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
-                  disabled={disabled}
-                />
-              </div>
+              {provider === 'custom' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="ai-endpoint-url">{t('endpointUrl')}</Label>
+                  <Input
+                    id="ai-endpoint-url"
+                    value={customEndpointUrl}
+                    onChange={(e) => setCustomEndpointUrl(e.target.value)}
+                    placeholder={t('endpointUrlPlaceholder')}
+                    disabled={disabled}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="ai-model">{t('model')}</Label>
+                  <Input
+                    id="ai-model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
+                    disabled={disabled}
+                  />
+                </div>
+              )}
             </div>
 
+            {provider === 'custom' && (
+              <p className="text-xs text-muted-foreground">
+                {t('customProviderNotice')}
+              </p>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="ai-key">{t('apiKey')}</Label>
+              <Label htmlFor="ai-key">
+                {provider === 'custom' ? t('sharedSecret') : t('apiKey')}
+              </Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Input
@@ -347,6 +379,7 @@ export function AiConfig() {
               </div>
             </div>
 
+            {provider !== 'custom' && (
             <div className="space-y-2">
               <Label htmlFor="ai-embeddings-key">
                 {t('embeddingsKey')}{' '}
@@ -378,6 +411,7 @@ export function AiConfig() {
                 })}
               </p>
             </div>
+            )}
           </CardContent>
         </Card>
 
@@ -389,6 +423,7 @@ export function AiConfig() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {provider !== 'custom' && (
             <div className="space-y-2">
               <Label htmlFor="ai-prompt">{t('businessContext')}</Label>
               <Textarea
@@ -400,6 +435,7 @@ export function AiConfig() {
                 disabled={disabled}
               />
             </div>
+            )}
 
             <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
               <div>
@@ -486,6 +522,7 @@ export function AiConfig() {
           </CardContent>
         </Card>
 
+        {provider !== 'custom' && (
         <AiKnowledgeCard
           accountId={accountId}
           canEdit={canEdit}
@@ -495,6 +532,7 @@ export function AiConfig() {
               : hasStoredEmbeddingsKey
           }
         />
+        )}
 
         <div className="flex items-center justify-between">
           {configured ? (

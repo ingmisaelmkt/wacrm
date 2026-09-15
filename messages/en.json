@@ -15,7 +15,7 @@
     "createAccount": "Create account"
   },
   "Sidebar": {
-    "title": "CRM Template for WhatsApp",
+    "title": "TruckCenter",
     "dashboard": "Dashboard",
     "inbox": "Inbox",
     "notifications": "Notifications",
@@ -1637,7 +1637,11 @@
       "encryptionNotice": "Your key is encrypted at rest (AES-256-GCM) and never shown again after saving.",
       "provider": "Provider",
       "model": "Model",
+      "endpointUrl": "Endpoint URL",
+      "endpointUrlPlaceholder": "https://your-agent.example.com",
+      "customProviderNotice": "Your agent owns its own prompt, tools, and knowledge base — wacrm just sends it the customer's phone number and latest message, and sends whatever it replies with back over WhatsApp.",
       "apiKey": "API key",
+      "sharedSecret": "Shared secret",
       "testKey": "Test key",
       "testSuccess": "Key works — the provider responded.",
       "testRejected": "The provider rejected the request.",
@@ -1662,6 +1666,7 @@
       "remove": "Remove",
       "save": "Save",
       "missingModel": "Enter a model name.",
+      "missingEndpointUrl": "Enter your agent's endpoint URL.",
       "missingApiKey": "Enter your API key.",
       "saveSuccess": "AI assistant saved.",
       "saveFailed": "Failed to save.",

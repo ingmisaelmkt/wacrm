@@ -18,6 +18,10 @@ interface DispatchArgs {
   /** The account's WhatsApp config owner, used for the outbound send's
    *  audit columns (mirrors how the flow runner passes it through). */
   configOwnerUserId: string
+  /** E.164 phone number of the customer, as already resolved by the
+   *  webhook. Only used by the `custom` provider (see `generateReply`);
+   *  harmless to pass for openai/anthropic. */
+  phoneNumber: string
 }
 
 /**
@@ -42,7 +46,7 @@ interface DispatchArgs {
 export async function dispatchInboundToAiReply(
   args: DispatchArgs,
 ): Promise<void> {
-  const { accountId, conversationId, contactId, configOwnerUserId } = args
+  const { accountId, conversationId, contactId, configOwnerUserId, phoneNumber } = args
 
   try {
     const db = supabaseAdmin()
@@ -116,6 +120,7 @@ export async function dispatchInboundToAiReply(
       config,
       systemPrompt,
       messages,
+      phoneNumber,
     })
 
     // Record token spend on the account's BYO key. Fire-and-forget so it

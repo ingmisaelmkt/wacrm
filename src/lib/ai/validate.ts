@@ -14,5 +14,8 @@ export async function validateAiCredentials(config: AiConfig): Promise<void> {
     config,
     systemPrompt: 'You are a connectivity check. Reply with the single word: OK.',
     messages: [{ role: 'user', content: 'ping' }],
+    // Only the `custom` provider needs this (it's per-phone-number); a
+    // sentinel is fine here since this call never reaches a real customer.
+    phoneNumber: '+000000000',
   })
 }

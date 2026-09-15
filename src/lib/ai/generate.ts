@@ -8,13 +8,20 @@ import {
 import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from './defaults'
 import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
+import { generateCustom } from './providers/custom'
+import { latestUserMessage } from './query'
 
 export interface GenerateArgs {
   config: AiConfig
-  /** Fully-built system prompt (see `buildSystemPrompt`). */
+  /** Fully-built system prompt (see `buildSystemPrompt`). Unused by the
+   *  `custom` provider — the account's own agent owns its prompt. */
   systemPrompt: string
   /** Recent conversation turns, oldest first. */
   messages: ChatMessage[]
+  /** E.164 phone number of the customer this turn is for. Required for
+   *  `provider: 'custom'` (the agent is keyed per phone number); ignored
+   *  by openai/anthropic. */
+  phoneNumber?: string
 }
 
 /**
@@ -23,7 +30,7 @@ export interface GenerateArgs {
  * of the raw text. Throws `AiError` on any provider/network failure.
  */
 export async function generateReply(args: GenerateArgs): Promise<GenerateResult> {
-  const { config, systemPrompt, messages } = args
+  const { config, systemPrompt, messages, phoneNumber } = args
   const timeoutMs = aiRequestTimeoutMs()
   const providerArgs = {
     apiKey: config.apiKey,
@@ -40,6 +47,27 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
       break
     case 'anthropic':
       result = await generateAnthropic(providerArgs)
+      break
+    case 'custom':
+      if (!config.customEndpointUrl) {
+        throw new AiError('Custom agent endpoint URL is not configured.', {
+          code: 'unsupported_provider',
+          status: 400,
+        })
+      }
+      if (!phoneNumber) {
+        throw new AiError('Custom agent provider requires a phone number.', {
+          code: 'unsupported_provider',
+          status: 400,
+        })
+      }
+      result = await generateCustom({
+        endpointUrl: config.customEndpointUrl,
+        apiKey: config.apiKey,
+        phoneNumber,
+        message: latestUserMessage(messages),
+        timeoutMs,
+      })
       break
     default:
       throw new AiError(`Unsupported AI provider: ${config.provider}`, {
