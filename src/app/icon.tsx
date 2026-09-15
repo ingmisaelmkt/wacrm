@@ -1,9 +1,14 @@
 import { ImageResponse } from "next/og";
 
-// Replaces the default Next.js favicon with the brand mark — Hostinger
-// violet rounded square + white chat-square glyph — matching the
-// sidebar logo in `src/components/layout/sidebar.tsx`. Next.js renders
-// this at build time and auto-injects <link rel="icon"> into <head>.
+// Replaces the default Next.js favicon with the TruckCenter brand mark —
+// brand magenta (#C72884, from the official brandbook) rounded square +
+// white chat-square glyph — matching the sidebar logo in
+// `src/components/layout/sidebar.tsx`. Next.js renders this at build time
+// and auto-injects <link rel="icon"> into <head>.
+//
+// No dedicated icon-only mark (isotype) exists in the current brandbook —
+// only the full wordmark lockup, which doesn't read at 32px. This glyph is
+// an interim stand-in; swap it for a real isotype if TruckCenter adds one.
 //
 // This route takes precedence over src/app/favicon.ico, which is the
 // Next.js default and can stay on disk harmlessly (or be removed).
@@ -22,7 +27,7 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed", // primary (Hostinger-aligned purple)
+          background: "#c72884", // TruckCenter brand magenta
           borderRadius: 6,
         }}
       >

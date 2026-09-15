@@ -14,6 +14,7 @@
  */
 
 export const THEME_IDS = [
+  "truckcenter",
   "violet",
   "emerald",
   "cobalt",
@@ -23,7 +24,7 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+export const DEFAULT_THEME: ThemeId = "truckcenter";
 
 export const STORAGE_KEY = "wacrm.theme";
 
@@ -67,6 +68,12 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
+  {
+    id: "truckcenter",
+    name: "TruckCenter",
+    tagline: "Brand magenta from the official TruckCenter brandbook.",
+    swatch: "#C72884",
+  },
   {
     id: "violet",
     name: "Violet",
