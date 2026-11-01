@@ -84,7 +84,7 @@ function LoginPageInner() {
               <UsersRound className="h-6 w-6 text-primary" />
             </div>
           ) : (
-            <Wordmark className="mb-3 text-3xl" />
+            <Wordmark className="mx-auto mb-3 w-64" />
           )}
           <CardTitle className="text-xl text-foreground">
             {inviteToken ? t('titleAccept') : t('titleWelcome')}

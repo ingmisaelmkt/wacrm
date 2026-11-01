@@ -189,7 +189,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
           <Link href="/dashboard" className="flex items-center">
-            <Wordmark className="text-lg" />
+            <Wordmark className="w-36" />
           </Link>
           <button
             type="button"

@@ -20,6 +20,8 @@ export interface CurrencyOption {
   label: string;
   /** Symbol for compact display, e.g. "$". */
   symbol: string;
+  /** Locale used to group digits, e.g. "es-CL" renders CLP as "$375.000". */
+  locale?: string;
 }
 
 /**
@@ -28,6 +30,7 @@ export interface CurrencyOption {
  * list to offer more — nothing else needs to change.
  */
 export const CURRENCIES: CurrencyOption[] = [
+  { code: "CLP", label: "Peso chileno", symbol: "$", locale: "es-CL" },
   { code: "USD", label: "US Dollar", symbol: "$" },
   { code: "EUR", label: "Euro", symbol: "€" },
   { code: "GBP", label: "British Pound", symbol: "£" },
@@ -64,8 +67,9 @@ export function formatCurrency(
 ): string {
   const code = (currency || DEFAULT_CURRENCY).trim();
   const amount = Number(value) || 0;
+  const locale = CURRENCIES.find((c) => c.code === code)?.locale;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: code,
       minimumFractionDigits: 0,
@@ -74,7 +78,7 @@ export function formatCurrency(
   } catch {
     // Invalid ISO code — show the raw code + grouped number so the
     // value is still legible instead of throwing.
-    return `${code} ${new Intl.NumberFormat(undefined, {
+    return `${code} ${new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
     }).format(amount)}`;
   }

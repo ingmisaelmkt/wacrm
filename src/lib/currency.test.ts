@@ -40,6 +40,12 @@ describe("formatCurrency", () => {
     }
   });
 
+  it("formats Chilean pesos with dot grouping regardless of browser locale", () => {
+    const out = formatCurrency(375000, "CLP");
+    expect(out).toContain("$");
+    expect(out).toContain("375.000");
+  });
+
   it("formats every offered currency without throwing", () => {
     for (const c of CURRENCIES) {
       expect(() => formatCurrency(1000, c.code)).not.toThrow();
